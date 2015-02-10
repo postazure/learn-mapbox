@@ -22,8 +22,8 @@ $("document").ready(function () {
   var myLayer = L.mapbox.featureLayer().addTo(map);
 
   loadMarkers(myLayer);
-
-  $("#marker_form input[name='submit']").on("click", function (e) {
+  $("#marker_form input[name='submit']").off('.addNewPin');
+  $("#marker_form input[name='submit']").on("click.addNewPin", function (e) {
     $.ajax({
       type: "post",
       url: "/add-pin",
@@ -42,8 +42,11 @@ $("document").ready(function () {
 });
 
 function addNewPinToMap(marker, map) {
-  var li = $("<a class='item' data-item='"+ marker+ "'>"+ marker.name +" - "+ marker.location+"</a>");
-  $("#pin_list").append(li);
+  var source   = $("#pin-template").html();
+  var template = Handlebars.compile(source);
+  var context = {marker: marker, name: marker.name, location: marker.location};
+  var pin    = template(context);
+  $("#pin_list").append(pin);
 
   var markerjson = {
     type: "Feature",
@@ -69,19 +72,23 @@ function loadMarkers(layer) {
     type: "get",
     url: "/get-pins"
   }).done(function (pinList) {
-    geoJSON(pinList, layer);
-  }).fail(function () {
+    drawPins(pinList, layer);
+  }).fail(function (errors) {
     throw "failed to load markers";
+    console.log(errors)
   });
 }
 
-function geoJSON(pinList, layer ) {
+function drawPins(pinList, layer) {
   $("#pin_list").empty();
-  var features = [];
+  var source   = $("#pin-template").html();
+  var template = Handlebars.compile(source);
 
+  var features = [];
   for (var i = 0; i < pinList.length; i++) {
-    var li = $("<a class='item' data-item='"+ pinList[i]+ "'>"+ pinList[i].name +" - "+ pinList[i].location+"</a>");
-    $("#pin_list").append(li);
+    var context = {marker: pinList[i], name: pinList[i].name, location: pinList[i].location};
+    var html    = template(context);
+    $("#pin_list").append(html);
 
     features.push({
       type: "Feature",
