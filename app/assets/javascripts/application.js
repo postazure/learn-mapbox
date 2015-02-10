@@ -34,17 +34,27 @@ $("document").ready(function () {
         }
       }
     }).done(function (marker) {
+      $('#marker_form')[0].reset();
       addNewPinToMap(marker, map);
-    }).fail(function () {
-      throw "create marker failed";
+    }).fail(function (errors) {
+      console.log(errors.responseText)
     });
   });
+
+
+  $("#pin_list").on("click", "a.item", function (e) {
+    var lat = $(this).data("lat");
+    var lng = $(this).data("lng");
+
+    map.panTo([lat, lng], 14);
+  })
+
 });
 
 function addNewPinToMap(marker, map) {
   var source   = $("#pin-template").html();
   var template = Handlebars.compile(source);
-  var context = {marker: marker, name: marker.name, location: marker.location};
+  var context = {lat: marker.lat, lng: marker.lng, id: marker.id, name: marker.name, location: marker.location};
   var pin    = template(context);
   $("#pin_list").append(pin);
 
@@ -73,9 +83,8 @@ function loadMarkers(layer) {
     url: "/get-pins"
   }).done(function (pinList) {
     drawPins(pinList, layer);
-  }).fail(function (errors) {
+  }).fail(function () {
     throw "failed to load markers";
-    console.log(errors)
   });
 }
 
@@ -86,9 +95,10 @@ function drawPins(pinList, layer) {
 
   var features = [];
   for (var i = 0; i < pinList.length; i++) {
-    var context = {marker: pinList[i], name: pinList[i].name, location: pinList[i].location};
+    var context = {lat: pinList[i].lat, lng: pinList[i].lng, id: pinList[i].id, name: pinList[i].name, location: pinList[i].location};
     var html    = template(context);
     $("#pin_list").append(html);
+
 
     features.push({
       type: "Feature",

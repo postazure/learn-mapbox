@@ -4,16 +4,21 @@ class LocationsController < ApplicationController
   end
 
   def add_pin
-    marker = Marker.new(marker_params)
-
-    geo_coords = Geocoder.search(params[:marker][:location])[0].geometry["location"]
-    marker.lng = geo_coords["lng"]
-    marker.lat = geo_coords["lat"]
-
-    if marker.save
-      render json:marker
+    geo_data = Geocoder.search(params[:marker][:location])
+    if geo_data.empty?
+      render json:{address:["address was not found"]}, status:422
     else
-      render json:marker.errors, status:422
+      geo_coords = geo_data[0].geometry["location"]
+
+      @marker = Marker.new(marker_params)
+      @marker.lng = geo_coords["lng"]
+      @marker.lat = geo_coords["lat"]
+
+      if @marker.save
+        render json:@marker
+      else
+        render json:@marker.errors.messages, status:422
+      end
     end
   end
 
